@@ -7,7 +7,7 @@ WITH first_seen_atts AS (
         attesting_validator_index,
         attesting_validator_committee_index
     FROM default.libp2p_gossipsub_beacon_attestation FINAL
-    WHERE slot_start_date_time BETWEEN toDateTime('2025-07-21 08:00:00') AND toDateTime('2025-07-21 09:00:00')
+    WHERE slot_start_date_time BETWEEN toDateTime('2025-07-21 08:30:00') AND toDateTime('2025-07-21 10:00:00')
         AND meta_network_name = 'mainnet'
         AND startsWith(
             meta_client_name,
@@ -19,9 +19,37 @@ WITH first_seen_atts AS (
             attesting_validator_index
             ORDER BY event_date_time
         )
+),
+unique_slots AS (
+    SELECT TOP 1 WITH TIES slot
+    FROM default.canonical_beacon_block FINAL
+    WHERE slot_start_date_time BETWEEN toDateTime('2025-07-21 08:30:00') AND toDateTime('2025-07-21 10:00:00')
+        AND meta_network_name = 'mainnet'
+    ORDER BY row_number() OVER (PARTITION BY slot)
+),
+slot_diffs AS (
+    SELECT slot,
+        lagInFrame(slot, 1, slot) OVER (
+            ORDER BY slot ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+        ) as prev_slot,
+        slot - prev_slot AS slot_diff
+    FROM unique_slots
+    ORDER BY slot
+),
+missed_slots AS (
+    SELECT slot -1 AS slot,
+        'missed' AS slot_status
+    FROM slot_diffs
+    WHERE slot_diff > 1
+),
+first_seen_atts_with_status AS (
+    SELECT *
+    FROM first_seen_atts
+        LEFT JOIN missed_slots ON first_seen_atts.slot = missed_slots.slot
 )
 SELECT slot,
     any(slot_start_date_time) AS slot_start_datetime,
+    any(slot_status) AS slot_status,
     meta_client_name AS node_name,
     any(meta_client_geo_country) AS node_country,
     attesting_validator_committee_index AS attesting_committee,
@@ -50,7 +78,7 @@ SELECT slot,
     quantileExact(0.95)(propagation_slot_start_diff) AS p95,
     quantileExact(0.99)(propagation_slot_start_diff) AS p99,
     max(propagation_slot_start_diff) AS p100
-FROM first_seen_atts
+FROM first_seen_atts_with_status
 GROUP BY slot,
     meta_client_name,
     attesting_validator_committee_index
