@@ -1,4 +1,46 @@
-WITH first_seen_atts AS (
+-- Missed slots logic
+WITH beacon_unique_slots AS (
+    SELECT slot
+    FROM default.canonical_beacon_block FINAL
+    WHERE slot_start_date_time BETWEEN toDateTime('2025-07-21 08:30:00') AND toDateTime('2025-07-21 10:00:00')
+        AND meta_network_name = 'mainnet'
+    GROUP BY slot
+    ORDER BY slot
+),
+beacon_slot_diffs AS (
+    SELECT slot -1 AS slot,
+        slot - lagInFrame(slot, 1, slot) OVER (
+            ORDER BY slot ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+        ) AS beacon_slot_diff
+    FROM beacon_unique_slots
+    ORDER BY slot
+),
+libp2p_unique_slots AS (
+    SELECT slot
+    FROM default.libp2p_gossipsub_beacon_block FINAL
+    WHERE slot_start_date_time BETWEEN toDateTime('2025-07-21 08:30:00') AND toDateTime('2025-07-21 10:00:00')
+        AND meta_network_name = 'mainnet'
+    GROUP BY slot
+    ORDER BY slot
+),
+libp2p_slot_diffs AS (
+    SELECT slot -1 AS slot,
+        slot - lagInFrame(slot, 1, slot) OVER (
+            ORDER BY slot ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+        ) AS libp2p_slot_diff
+    FROM libp2p_unique_slots
+    ORDER BY slot
+),
+missed_slots AS (
+    SELECT beacon_slot_diffs.slot AS slot,
+        'missed' AS slot_status
+    FROM beacon_slot_diffs
+        OUTER JOIN libp2p_slot_diffs ON beacon_slot_diffs.slot = libp2p_slot_diffs.slot
+    WHERE beacon_slot_diffs.beacon_slot_diff > 1
+        AND libp2p_slot_diffs.libp2p_slot_diff > 1
+),
+-- Attestation logic
+first_seen_atts AS (
     SELECT TOP 1 WITH TIES slot,
         slot_start_date_time,
         meta_client_name,
@@ -19,28 +61,6 @@ WITH first_seen_atts AS (
             attesting_validator_index
             ORDER BY event_date_time
         )
-),
-unique_slots AS (
-    SELECT TOP 1 WITH TIES slot
-    FROM default.canonical_beacon_block FINAL
-    WHERE slot_start_date_time BETWEEN toDateTime('2025-07-21 08:30:00') AND toDateTime('2025-07-21 10:00:00')
-        AND meta_network_name = 'mainnet'
-    ORDER BY row_number() OVER (PARTITION BY slot)
-),
-slot_diffs AS (
-    SELECT slot,
-        lagInFrame(slot, 1, slot) OVER (
-            ORDER BY slot ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
-        ) as prev_slot,
-        slot - prev_slot AS slot_diff
-    FROM unique_slots
-    ORDER BY slot
-),
-missed_slots AS (
-    SELECT slot -1 AS slot,
-        'missed' AS slot_status
-    FROM slot_diffs
-    WHERE slot_diff > 1
 ),
 first_seen_atts_with_status AS (
     SELECT *
