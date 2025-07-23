@@ -209,3 +209,4 @@ __marimo__/
 # Project specific
 secrets.json
 data/
+.DS_STORE
