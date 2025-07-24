@@ -15,7 +15,7 @@ An empirical analysis of slot timings on Ethereum
 - [ ] Which validators have significantly different timings between missed slots and normal slots? These are likely the non-prysm validators as all the other clients don't wait for the 4s mark to send their attestations.
 - [ ] Join attestation data with more data sources and analyze. Sources:
   - [ ] Validator metadata from [Thomas](https://dune.com/data/dune.rig_ef.validator_metadata) -> we can segment libp2p peers by country, client and deployment type. Not sure whether we can join this with the attestor ID...
-  - [ ] Ultrasound relay data on when the block was delivered to lighthouse -> we could use this as a lower bound for when the block picked by the proposer; this should give us more detailed attestations timings instead of count from the start of the slot.
+  - [X] Ultrasound relay data on when the block was delivered to lighthouse -> we could use this as a lower bound for when the block picked by the proposer; this should give us more detailed attestations timings instead of count from the start of the slot.
   - [ ] Titan relay data -> same rationale as the Ultrasound relay data, but I still need to check whether they can share the data with us
-- [ ] Join beacon block data with more data sources and analyze. Sources:
+- [ ] Join libp2p block data with more data sources and analyze. Sources:
   - [ ] Ultrasound relay and Titan relay -> we could use this as a lower bound for when the block picked by the proposer; this should give us more accurate block propagation timings
