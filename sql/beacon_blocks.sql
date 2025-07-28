@@ -5,6 +5,6 @@ SELECT slot,
     slot_start_date_time AS slot_start_time,
     event_date_time AS block_arrival_time,
     propagation_slot_start_diff AS block_arrival_ms
-FROM default.beacon_api_eth_v1_events_block FINAL
+FROM default.beacon_api_eth_v1_events_block_gossip FINAL
 WHERE slot_start_date_time BETWEEN toDateTime('2025-07-21 08:30:00') AND toDateTime('2025-07-21 10:00:00')
     AND meta_network_name = 'mainnet'
