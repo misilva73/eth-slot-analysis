@@ -44,6 +44,28 @@ def get_slot_sample_df(
             "header_from": "self_build",
         }
     )
+    # Add slot start times
+    slot_start_df = query.get_slot_start_times(db_url, slot_start - 2, slot_end + 2)
+    relay_df = relay_df.merge(
+        slot_start_df,
+        on="slot",
+        how="inner",
+    )
+    self_build_df = self_build_df.merge(
+        slot_start_df,
+        on="slot",
+        how="inner",
+    )
+    # Filter rows with data issues on relay df
+    relay_df = relay_df[
+        (df["publish_datetime"] - df["slot_start_datetime"]).dt.total_seconds().between(0,4)
+        ]
+    relay_df = relay_df[
+        (df["request_datetime"] - df["slot_start_datetime"]).dt.total_seconds()>0
+        ]
+    relay_df = relay_df[
+        (df["publish_datetime"] - df["request_datetime"]).dt.total_seconds()>0
+        ]
     # Sample slots by category and combine
     self_build_n = len(self_build_df)
     relay_n = len(relay_df)
@@ -61,13 +83,7 @@ def get_slot_sample_df(
         relay_sample_df = relay_df.sample(n=int(sample_size / 2))
         self_build_sample_df = self_build_df.sample(n=int(sample_size / 2))
         df = pd.concat([relay_sample_df, self_build_sample_df], ignore_index=True)
-    # Add slot start times
-    slot_start_df = query.get_slot_start_times(db_url, slot_start - 2, slot_end + 2)
-    df = df.merge(
-        slot_start_df,
-        on="slot",
-        how="inner",
-    )
+    # Compute extra columns
     df["publish_datetime"] = pd.to_datetime(df["publish_datetime"])
     df["request_datetime"] = np.where(
         df["header_from"] == "self_build",
@@ -149,14 +165,6 @@ def load_relay_data(data_dir: str) -> pd.DataFrame:
         )
     # Join datasets
     relay_df = pd.concat([ultra_df, titan_df], ignore_index=True)
-    # Remove duplicates -> get first request by slot
-    relay_df = (
-        relay_df.sort_values(by="request_datetime")
-        .groupby("slot")
-        .first()
-        .reset_index()
-        .sort_values("slot")
-    )
     return relay_df
 
 
