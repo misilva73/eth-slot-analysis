@@ -58,13 +58,13 @@ def get_slot_sample_df(
     )
     # Filter rows with data issues on relay df
     relay_df = relay_df[
-        (df["publish_datetime"] - df["slot_start_datetime"]).dt.total_seconds().between(0,4)
+        (relay_df["publish_datetime"] - relay_df["slot_start_datetime"]).dt.total_seconds().between(0,4)
         ]
     relay_df = relay_df[
-        (df["request_datetime"] - df["slot_start_datetime"]).dt.total_seconds()>0
+        (relay_df["request_datetime"] - relay_df["slot_start_datetime"]).dt.total_seconds()>0
         ]
     relay_df = relay_df[
-        (df["publish_datetime"] - df["request_datetime"]).dt.total_seconds()>0
+        (relay_df["publish_datetime"] - relay_df["request_datetime"]).dt.total_seconds()>0
         ]
     # Sample slots by category and combine
     self_build_n = len(self_build_df)
