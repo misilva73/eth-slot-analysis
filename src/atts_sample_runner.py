@@ -141,7 +141,7 @@ def load_relay_data(data_dir: str) -> pd.DataFrame:
         ).dt.tz_localize(None)
         ultra_df = ultra_df[ultra_df["is_ultra_sound_header"]]
         ultra_df = ultra_df[["slot", "request_datetime", "publish_datetime"]]
-        titan_df["header_from"] = "ultrasound"
+        ultra_df["header_from"] = "ultrasound"
     except FileNotFoundError:
         logging.warning(f"Relay data file {ultra_file} not found.")
         ultra_df = pd.DataFrame(
