@@ -28,6 +28,7 @@ def get_slot_sample_df(
         relay_df = pd.DataFrame(
             {
                 "slot": relay_slots_list,
+                "request_datetime": None,
                 "publish_datetime": None,
                 "header_from": "no_relay_info",
             }
@@ -38,6 +39,7 @@ def get_slot_sample_df(
     self_build_df = pd.DataFrame(
         {
             "slot": self_build_list,
+            "request_datetime": None,
             "publish_datetime": None,
             "header_from": "self_build",
         }
@@ -67,11 +69,19 @@ def get_slot_sample_df(
         how="inner",
     )
     df["publish_datetime"] = pd.to_datetime(df["publish_datetime"])
+    df["request_datetime"] = np.where(
+        df["header_from"] == "self_build",
+        df["slot_start_datetime"],
+        df["request_datetime"],
+    )
     df["publish_datetime"] = np.where(
         df["header_from"] == "self_build",
         df["slot_start_datetime"],
         df["publish_datetime"],
     )
+    df["request_time_ms"] = (
+        df["request_datetime"] - df["slot_start_datetime"]
+    ).dt.total_seconds() * 1000
     df["publish_time_ms"] = (
         df["publish_datetime"] - df["slot_start_datetime"]
     ).dt.total_seconds() * 1000
@@ -101,16 +111,52 @@ def get_slot_lists(
 
 def load_relay_data(data_dir: str) -> pd.DataFrame:
     relay_data_folder = os.path.join(data_dir, "relay")
-    relay_data_files = [f for f in os.listdir(relay_data_folder) if f.endswith(".csv")]
-    if len(relay_data_files) == 0:
-        logging.warning("No relay data. Will focus analysis on self-build blocks")
-        relay_df = pd.DataFrame(columns=["slot", "publish_datetime", "header_from"])
-    else:
-        relay_df_list = []
-        for file_name in relay_data_files:
-            file_df = pd.read_csv(os.path.join(relay_data_folder, file_name))
-            relay_df_list.append(file_df)
-        relay_df = pd.concat(relay_df_list, ignore_index=True)
+    # Titan relay data
+    titan_file = os.path.join(relay_data_folder, "block_times_since_12187616.csv")
+    try:
+        titan_df = pd.read_csv(titan_file)
+        titan_df = titan_df.rename(columns={"slot_number": "slot"})
+        titan_df["request_datetime"] = pd.to_datetime(
+            titan_df["header_request_received"]
+        )
+        titan_df["publish_datetime"] = pd.to_datetime(titan_df["block_published"])
+        titan_df = titan_df[["slot", "request_datetime", "publish_datetime"]]
+        titan_df["header_from"] = "titan"
+    except FileNotFoundError:
+        logging.warning(f"Relay data file {titan_file} not found.")
+        titan_df = pd.DataFrame(
+            columns=["slot", "request_datetime", "publish_datetime"]
+        )
+    # Ultrasounds relay data
+    ultra_file = os.path.join(
+        relay_data_folder, "ultrasoud_payload_publish_time_07_21_17_32.csv"
+    )
+    try:
+        ultra_df = pd.read_csv(ultra_file)
+        ultra_df["request_datetime"] = pd.to_datetime(
+            ultra_df["received_at"]
+        ).dt.tz_localize(None)
+        ultra_df["publish_datetime"] = pd.to_datetime(
+            ultra_df["time_before_publish"]
+        ).dt.tz_localize(None)
+        ultra_df = ultra_df[ultra_df["is_ultra_sound_header"]]
+        ultra_df = ultra_df[["slot", "request_datetime", "publish_datetime"]]
+        titan_df["header_from"] = "ultrasound"
+    except FileNotFoundError:
+        logging.warning(f"Relay data file {ultra_file} not found.")
+        ultra_df = pd.DataFrame(
+            columns=["slot", "request_datetime", "publish_datetime"]
+        )
+    # Join datasets
+    relay_df = pd.concat([ultra_df, titan_df], ignore_index=True)
+    # Remove duplicates -> get first request by slot
+    relay_df = (
+        relay_df.sort_values(by="request_datetime")
+        .groupby("slot")
+        .first()
+        .reset_index()
+        .sort_values("slot")
+    )
     return relay_df
 
 
@@ -121,7 +167,7 @@ def get_and_save_ethseer_validator_info(
     if os.path.exists(file_path) and reprocess == False:
         logging.info(f"Loading validator info already in {file_path}")
     else:
-        logging.info("Querying validator info from ethseer and saving in {file_path}")
+        logging.info(f"Querying validator info from ethseer and saving in {file_path}")
         val_entities_df = query.get_validator_ethseer_info(db_url)
         val_entities_df.to_parquet(file_path, index=False)
 
