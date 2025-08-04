@@ -56,6 +56,9 @@ def get_slot_sample_df(
         on="slot",
         how="inner",
     )
+    # Filter relay data to exclude negative request times
+    relay_df = relay_df[relay_df["request_datetime"] >= relay_df["slot_start_datetime"]]
+    relay_df = relay_df[relay_df["publish_datetime"] >= relay_df["slot_start_datetime"]]
     # Sample slots by category and combine
     self_build_n = len(self_build_df)
     relay_n = len(relay_df)
