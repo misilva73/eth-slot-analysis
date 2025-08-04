@@ -56,16 +56,6 @@ def get_slot_sample_df(
         on="slot",
         how="inner",
     )
-    # Filter rows with data issues on relay df
-    relay_df = relay_df[
-        (relay_df["publish_datetime"] - relay_df["slot_start_datetime"]).dt.total_seconds().between(0,4)
-        ]
-    relay_df = relay_df[
-        (relay_df["request_datetime"] - relay_df["slot_start_datetime"]).dt.total_seconds()>0
-        ]
-    relay_df = relay_df[
-        (relay_df["publish_datetime"] - relay_df["request_datetime"]).dt.total_seconds()>0
-        ]
     # Sample slots by category and combine
     self_build_n = len(self_build_df)
     relay_n = len(relay_df)
@@ -132,10 +122,8 @@ def load_relay_data(data_dir: str) -> pd.DataFrame:
     try:
         titan_df = pd.read_csv(titan_file)
         titan_df = titan_df.rename(columns={"slot_number": "slot"})
-        titan_df["request_datetime"] = pd.to_datetime(
-            titan_df["header_request_received"]
-        )
-        titan_df["publish_datetime"] = pd.to_datetime(titan_df["block_published"])
+        titan_df["request_datetime"] = pd.to_datetime(titan_df["signed_block_received"])
+        titan_df["publish_datetime"] = pd.to_datetime(titan_df["publishing_block"])
         titan_df = titan_df[["slot", "request_datetime", "publish_datetime"]]
         titan_df["header_from"] = "titan"
     except FileNotFoundError:
