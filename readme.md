@@ -27,12 +27,12 @@ Here, we are focussed on pure attestation propagation time.
 
 Here, we are focussed on the overall attestation arrivals, which includes bock propagation, block execution and validation and attestation propagation. Besides being a more realistic scenario than missed slots, we have a wider set of factor to account for late arrivals.
 
-- [ ] Collect raw sample of attestations from two types of slots:
-  - [ ] Relay blocks
-  - [ ] Self-build blocks (still need to check how to get this data)
+- [X] Collect raw sample of attestations from two types of slots:
+  - [X] Relay blocks
+  - [X] Self-build blocks (still need to check how to get this data)
 - [ ] Join with data on attestor - entity, country, client (using ethseer or [validator_metadata](https://dune.com/data/dune.rig_ef.validator_metadata)?)
-- [ ] Join with data on block - size, gas used, # transactions block propagation time (avg & p95)
-- [ ] Analyze late arrivals (i.e. after 4.5s). Are they overrepresented across any attestor feature or block feature?
+- [X] Join with data on block - size, gas used, # transactions block propagation time (avg & p95)
+- [X] Analyze late arrivals (i.e. after 4.5s). Are they overrepresented across any attestor feature or block feature?
 - [ ] Build regression model to predict attestation arrival and compute feature importance.
 
 #### Additional analysis
