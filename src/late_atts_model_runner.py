@@ -10,6 +10,7 @@ import shap
 from lightgbm import LGBMClassifier
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 
 logging.basicConfig(
@@ -60,7 +61,7 @@ def prep_data_for_training_and_save(
     model_df = df.merge(entity_counts, left_on="entity", right_index=True)
     model_df["entity"] = np.where(model_df["count"] > 0.01, model_df["entity"], "other")
     # Filter rows with negative arrival times
-    model_df = model_df[model_df["net_atts_arrival_time_ms"] >= 0]
+    model_df = model_df[model_df["net_atts_arrival_time_ms"] >= 0].sample(frac=0.01)
     # Select features
     X_raw = model_df[FEATURES].values
     # Build the column transformer
@@ -89,7 +90,7 @@ def prep_data_for_training_and_save(
 def train_tree_model_and_save(
     X: np.ndarray,
     y: np.ndarray,
-    model: Union[LGBMClassifier, RandomForestClassifier],
+    model: Union[LGBMClassifier, RandomForestClassifier, LogisticRegression],
     feature_names: np.ndarray,
     out_dir: str,
 ) -> None:
@@ -105,7 +106,10 @@ def train_tree_model_and_save(
         pickle.dump(model, outp)
     logging.info(f"Sucessfully saved trained {model_name} model")
     # Compute SHAP values
-    explainer = shap.TreeExplainer(model=model, data=X, feature_names=feature_names)
+    if model_name == "LogisticRegression":
+        explainer = shap.LinearExplainer(model, X, feature_names=feature_names)
+    else:
+        explainer = shap.TreeExplainer(model, X, feature_names=feature_names)
     explanation = explainer(X)
     # Save shap values
     out_file = os.path.join(out_dir, model_name, "shap.pkl")
@@ -139,7 +143,7 @@ def parse_configuration():
     parser.add_argument(
         "--run_id",
         type=str,
-        default=None,
+        default="sample_12187616_12202016",
         help="Run ID of the data sample. Used to read the data to train the models. "
         "No defaults. Must be provded by user",
     )
@@ -168,6 +172,9 @@ def main():
     # Train Random forest model
     rf_model = RandomForestClassifier(max_depth=3)
     train_tree_model_and_save(X, y, rf_model, feature_names, out_dir)
+    # Train Logistic regression
+    lr_model = LogisticRegression(max_depth=3)
+    train_tree_model_and_save(X, y, lr_model, feature_names, out_dir)
 
 
 if __name__ == "__main__":
