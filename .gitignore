@@ -210,6 +210,7 @@ __marimo__/
 secrets.json
 *.csv
 *.parquet
-*pkl
+*.pkl
+*.npy
 .DS_STORE
 .vscode/

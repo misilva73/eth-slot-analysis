@@ -51,8 +51,9 @@ def load_data(data_dir: str, run_id: str) -> pd.DataFrame:
     return df
 
 
-def prep_data_for_training(
+def prep_data_for_training_and_save(
     df: pd.DataFrame,
+    out_dir: str,
 ) -> Tuple[np.ndarray, np.ndarray, ColumnTransformer]:
     # Reduce entity dimensions
     entity_counts = df["entity"].value_counts() / len(df)
@@ -73,6 +74,12 @@ def prep_data_for_training(
     X = preprocessor.fit_transform(X_raw)
     # Define the target: binary classification: late (1) or not (0)
     y = np.where(model_df["net_atts_arrival_time_ms"] > 4500, True, False)
+    # Save processed data
+    out_data_dir = os.path.join(out_dir, "train_data")
+    os.makedirs(out_data_dir, exist_ok=True)
+    np.save(os.path.join(out_data_dir, "X.npy"), X)
+    np.save(os.path.join(out_data_dir, "y.npy"), y)
+    logging.info(f"Sucessfully saved training data to {out_data_dir}.")
     return X, y, preprocessor
 
 
@@ -152,7 +159,7 @@ def main():
     out_dir = os.path.join(data_dir, "model_outputs")
     # Data prep
     df = load_data(data_dir, run_id)
-    X, y, preprocessor = prep_data_for_training(df)
+    X, y, preprocessor = prep_data_for_training_and_save(df, out_dir)
     # Train LighGBM model
     lgbm_model = LGBMClassifier(max_depth=3)
     train_tree_model_and_save(X, y, lgbm_model, preprocessor, out_dir)
