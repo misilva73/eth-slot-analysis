@@ -54,7 +54,7 @@ def load_data(data_dir: str, run_id: str) -> pd.DataFrame:
 def prep_data_for_training_and_save(
     df: pd.DataFrame,
     out_dir: str,
-) -> Tuple[np.ndarray, np.ndarray, ColumnTransformer]:
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     # Reduce entity dimensions
     entity_counts = df["entity"].value_counts() / len(df)
     model_df = df.merge(entity_counts, left_on="entity", right_index=True)
@@ -79,15 +79,18 @@ def prep_data_for_training_and_save(
     os.makedirs(out_data_dir, exist_ok=True)
     np.save(os.path.join(out_data_dir, "X.npy"), X)
     np.save(os.path.join(out_data_dir, "y.npy"), y)
+    # Save feature names
+    feature_names = get_feature_names(preprocessor)
+    np.save(os.path.join(out_data_dir, "feature_names.npy"), feature_names)
     logging.info(f"Sucessfully saved training data to {out_data_dir}.")
-    return X, y, preprocessor
+    return X, y, feature_names
 
 
 def train_tree_model_and_save(
     X: np.ndarray,
     y: np.ndarray,
     model: Union[LGBMClassifier, RandomForestClassifier],
-    preprocessor: ColumnTransformer,
+    feature_names: np.ndarray,
     out_dir: str,
 ) -> None:
     # Create output directory
@@ -102,7 +105,6 @@ def train_tree_model_and_save(
         pickle.dump(model, outp)
     logging.info(f"Sucessfully saved trained {model_name} model")
     # Compute SHAP values
-    feature_names = get_feature_names(preprocessor)
     explainer = shap.TreeExplainer(model=model, data=X, feature_names=feature_names)
     explanation = explainer(X)
     # Save shap values
@@ -112,13 +114,13 @@ def train_tree_model_and_save(
     logging.info(f"Sucessfully saved shap values for {model_name} model")
 
 
-def get_feature_names(preprocessor: ColumnTransformer) -> list:
+def get_feature_names(preprocessor: ColumnTransformer) -> np.ndarray:
     # Get feature names
-    num_feature_names = np.array(FEATURES)[NUM_FEATURES_INDICES].tolist()
+    num_feature_names = np.array(FEATURES)[NUM_FEATURES_INDICES]
     cat_feature_names = preprocessor.named_transformers_["cat"].get_feature_names_out(
         np.array(FEATURES)[CAT_FEATURES_INDICES].tolist()
     )
-    feature_names = np.concatenate([num_feature_names, cat_feature_names]).tolist()
+    feature_names = np.concatenate([num_feature_names, cat_feature_names])
     return feature_names
 
 
@@ -159,13 +161,13 @@ def main():
     out_dir = os.path.join(data_dir, "model_outputs")
     # Data prep
     df = load_data(data_dir, run_id)
-    X, y, preprocessor = prep_data_for_training_and_save(df, out_dir)
+    X, y, feature_names = prep_data_for_training_and_save(df, out_dir)
     # Train LighGBM model
     lgbm_model = LGBMClassifier(max_depth=3)
-    train_tree_model_and_save(X, y, lgbm_model, preprocessor, out_dir)
+    train_tree_model_and_save(X, y, lgbm_model, feature_names, out_dir)
     # Train Random forest model
     rf_model = RandomForestClassifier(max_depth=3)
-    train_tree_model_and_save(X, y, rf_model, preprocessor, out_dir)
+    train_tree_model_and_save(X, y, rf_model, feature_names, out_dir)
 
 
 if __name__ == "__main__":
