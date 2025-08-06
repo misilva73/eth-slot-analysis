@@ -61,7 +61,7 @@ def prep_data_for_training_and_save(
     model_df = df.merge(entity_counts, left_on="entity", right_index=True)
     model_df["entity"] = np.where(model_df["count"] > 0.01, model_df["entity"], "other")
     # Filter rows with negative arrival times
-    model_df = model_df[model_df["net_atts_arrival_time_ms"] >= 0].sample(frac=0.01)
+    model_df = model_df[model_df["net_atts_arrival_time_ms"] >= 0]
     # Select features
     X_raw = model_df[FEATURES].values
     # Build the column transformer
@@ -143,7 +143,7 @@ def parse_configuration():
     parser.add_argument(
         "--run_id",
         type=str,
-        default="sample_12187616_12202016",
+        default=None,
         help="Run ID of the data sample. Used to read the data to train the models. "
         "No defaults. Must be provded by user",
     )
@@ -173,7 +173,7 @@ def main():
     rf_model = RandomForestClassifier(max_depth=3)
     train_tree_model_and_save(X, y, rf_model, feature_names, out_dir)
     # Train Logistic regression
-    lr_model = LogisticRegression(max_depth=3)
+    lr_model = LogisticRegression()
     train_tree_model_and_save(X, y, lr_model, feature_names, out_dir)
 
 
