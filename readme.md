@@ -9,7 +9,7 @@ An empirical analysis of slot timings on Ethereum
 
 ### Block and blob arrivals
 
-- [ ] Collect larger sample of block arrivals and estimate stats per slot -> this will be used for the attestation model
+- [X] Collect larger sample of block arrivals and estimate stats per slot -> this will be used for the attestation model
 - [ ] Analyse blob arrivals and propagation (similar to what we did for blocks)
 
 ### Attestation arrivals
@@ -30,10 +30,10 @@ Here, we are focussed on the overall attestation arrivals, which includes bock p
 - [X] Collect raw sample of attestations from two types of slots:
   - [X] Relay blocks
   - [X] Self-build blocks (still need to check how to get this data)
-- [ ] Join with data on attestor - entity, country, client (using ethseer or [validator_metadata](https://dune.com/data/dune.rig_ef.validator_metadata)?)
+- [ ] Join with data on attestor - entity, **country, client** (using ethseer or [validator_metadata](https://dune.com/data/dune.rig_ef.validator_metadata)?)
 - [X] Join with data on block - size, gas used, # transactions block propagation time (avg & p95)
 - [X] Analyze late arrivals (i.e. after 4.5s). Are they overrepresented across any attestor feature or block feature?
-- [ ] Build regression model to predict attestation arrival and compute feature importance.
+- [X] Build regression model to predict attestation arrival and compute feature importance.
 
 #### Additional analysis
 
