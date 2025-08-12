@@ -38,6 +38,7 @@ FEATURES = [
     "block_total_bytes_compressed",
     "block_proposer_index",
     "block_gas_used",
+    "block_blob_count",
     "block_tx_count",
     "entity",
 ]

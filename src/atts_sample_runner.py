@@ -91,9 +91,21 @@ def get_slot_sample_df(
     df["request_time_ms"] = (
         df["request_datetime"] - df["slot_start_datetime"]
     ).dt.total_seconds() * 1000
-    df["publish_time_ms"] = (
+    publish_time_ms_arr = (
         df["publish_datetime"] - df["slot_start_datetime"]
     ).dt.total_seconds() * 1000
+    df["publish_time_ms"] = np.where(
+        df["header_from"] == "flashbots", df["publish_time_ms"], publish_time_ms_arr
+    )
+    # Get fastest publish by slot
+    relay_df = (
+        relay_df
+        .sort_values(by="publish_time_ms", ascending=False)
+        .groupby("slot")
+        .first(skipna=False)
+        .reset_index()
+        .sort_values(by="slot")
+    )
     return df
 
 
@@ -121,7 +133,7 @@ def get_slot_lists(
 def load_relay_data(data_dir: str) -> pd.DataFrame:
     relay_data_folder = os.path.join(data_dir, "relay")
     # Titan relay data
-    titan_file = os.path.join(relay_data_folder, "block_times_since_12187616.csv")
+    titan_file = os.path.join(relay_data_folder, "titan_block_timings_12243620_12294000.csv")
     try:
         titan_df = pd.read_csv(titan_file)
         titan_df = titan_df.rename(columns={"slot_number": "slot"})
@@ -132,11 +144,11 @@ def load_relay_data(data_dir: str) -> pd.DataFrame:
     except FileNotFoundError:
         logging.warning(f"Relay data file {titan_file} not found.")
         titan_df = pd.DataFrame(
-            columns=["slot", "request_datetime", "publish_datetime"]
+            columns=["slot", "request_datetime", "publish_datetime", "header_from"]
         )
     # Ultrasounds relay data
     ultra_file = os.path.join(
-        relay_data_folder, "ultrasoud_payload_publish_time_07_21_17_32.csv"
+        relay_data_folder, "ultrasound_payload_publish_time_08_11_13_49.csv"
     )
     try:
         ultra_df = pd.read_csv(ultra_file)
@@ -152,10 +164,21 @@ def load_relay_data(data_dir: str) -> pd.DataFrame:
     except FileNotFoundError:
         logging.warning(f"Relay data file {ultra_file} not found.")
         ultra_df = pd.DataFrame(
-            columns=["slot", "request_datetime", "publish_datetime"]
+            columns=["slot", "request_datetime", "publish_datetime", "header_from"]
         )
+    # Flashbots relay data
+    fb_file = os.path.join(relay_data_folder, "flashbots-relay-timing-until-aug4.csv")
+    try:
+        fb_df = pd.read_csv(fb_file)
+        fb_df = fb_df[["slot", "msIntoSlot"]].rename(
+            columns={"msIntoSlot": "publish_time_ms"}
+        )
+        fb_df["header_from"] = "flashbots"
+    except FileNotFoundError:
+        logging.warning(f"Relay data file {fb_file} not found.")
+        fb_df = pd.DataFrame(columns=["slot", "publish_time_ms", "header_from"])
     # Join datasets
-    relay_df = pd.concat([ultra_df, titan_df], ignore_index=True)
+    relay_df = pd.concat([ultra_df, titan_df, fb_df], ignore_index=True)
     return relay_df
 
 
@@ -176,6 +199,7 @@ def get_and_save_attestations(
     db_url: str,
     out_dir: str,
 ) -> None:
+    logging.info(f"Gathering attestations for slot sample...")
     atts_df = pd.DataFrame()
     for slot in tqdm(slot_sample_df["slot"].unique()):
         temp_df = query.get_attestations_for_slot(slot, db_url)
@@ -228,15 +252,15 @@ def parse_configuration():
     parser.add_argument(
         "--slot_start",
         type=int,
-        default=12187616,
-        help="Earliest slot number for sample. Default is 12187616, i.e., "
-        "the earliest slot with correct libp2p data.",
+        default=12243620,
+        help="Earliest slot number for sample. Default is 12243620, i.e., "
+        "the start of July 29th 2025",
     )
     parser.add_argument(
         "--slot_range",
         type=int,
-        default=14400,
-        help="Max slot range for sample. Default is 2 days after starting slot.",
+        default=50400,
+        help="Max slot range for sample. Default is 7 days after starting slot.",
     )
     parser.add_argument(
         "--sample_size",

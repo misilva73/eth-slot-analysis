@@ -182,7 +182,8 @@ def get_block_content_info(db_url: str, slot_start: int, slot_end: int) -> pd.Da
         any(block_total_bytes_compressed) AS block_total_bytes_compressed,
         any(proposer_index) AS block_proposer_index,
         any(execution_payload_gas_used) AS block_gas_used,
-        any(execution_payload_transactions_count) AS block_tx_count
+        any(execution_payload_transactions_count) AS block_tx_count,
+        any(execution_payload_blob_gas_used)/131072 AS block_blob_count
     FROM default.canonical_beacon_block FINAL
     WHERE slot_start_date_time BETWEEN toDateTime('{start_date_str}') AND toDateTime('{end_date_str}')
         AND meta_network_name = 'mainnet'
