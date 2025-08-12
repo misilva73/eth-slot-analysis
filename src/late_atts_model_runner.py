@@ -76,7 +76,7 @@ def prep_data_for_training_and_save(
     model_df = df.merge(entity_counts, left_on="entity", right_index=True)
     model_df["entity"] = np.where(model_df["count"] > 0.01, model_df["entity"], "other")
     # Filter rows with negative arrival times
-    model_df = model_df[model_df[predictor] >= 0].sample(frac=0.001)
+    model_df = model_df[model_df[predictor] >= 0]
     # Select features
     X_raw = model_df[features].values
     # Build the column transformer
@@ -372,7 +372,7 @@ def parse_configuration():
     parser.add_argument(
         "--sample_id",
         type=str,
-        default="sample_12187616_12202016",
+        default=None,
         help="ID of the data sample. Used to read the data to train the models. "
         "No defaults. Must be provded by user.",
     )
