@@ -340,16 +340,16 @@ that predict whether an attestation was late, which is defined as taking more th
 use these models to compute feature importance and SHAP values to surface which properties of the 
 slot or the attester explain late arrivals.
 
-This report was generated from the data in {sample_id} at {run_time.strftime("%d-%m-%Y %H:%M:%S")}.
+This report was generated from the data in `{sample_id}` at {run_time.strftime("%d-%m-%Y %H:%M:%S")}.
 """
     )
     sample_tuple_list = [
         ("1_original", "Original sample"),
         ("2_balanced", "Balanced sample (50% of each predictor class)"),
-        ("3_self_build", "Self-builder sample"),
-        ("4_relay", "Relay sample"),
-        ("5_no_entity", "No entity feature sample"),
-        ("6_full_time_pred", "Timings since slot start predictor"),
+        ("3_self_build", "Self-builder balanced sample"),
+        ("4_relay", "Relay balanced sample"),
+        ("5_no_entity", "No entity feature balanced sample"),
+        ("6_full_time_pred", "Timings since slot start balanced predictor"),
     ]
     for sample_folder, sample_name in sample_tuple_list:
         sample_dir = os.path.join(out_dir, sample_folder)
@@ -387,6 +387,14 @@ def parse_configuration():
     return config
 
 
+def make_balanced_sample(df:pd.DataFrame, predictor:str=PREDICTOR)->pd.DataFrame:
+    late_df = df[df[predictor] > 4500]
+    sample_size = len(late_df)
+    early_df = df[df[predictor] <= 4500].sample(n=sample_size)
+    balanced_df = pd.concat([late_df, early_df]).sort_index()
+    return balanced_df
+
+
 def main():
     # Config
     config = parse_configuration()
@@ -403,21 +411,19 @@ def main():
     run_out_dir = os.path.join(out_dir, "1_original")
     do_model_run(df, run_out_dir)
     # Model run - balanced sample
-    logging.info("Starting training for balanced sample")
-    late_df = df[df["net_atts_arrival_time_ms"] > 4500]
-    sample_size = len(late_df)
-    early_df = df[df["net_atts_arrival_time_ms"] <= 4500].sample(n=sample_size)
-    balanced_df = pd.concat([late_df, early_df]).sort_index()
+    balanced_df = make_balanced_sample(df)
     run_out_dir = os.path.join(out_dir, "2_balanced")
     do_model_run(balanced_df, run_out_dir)
     # Model run - self_build
     logging.info("Starting training for self-builder sample")
     self_build_df = df[df["header_from"] == "self_build"]
+    self_build_df = make_balanced_sample(self_build_df)
     run_out_dir = os.path.join(out_dir, "3_self_build")
     do_model_run(self_build_df, run_out_dir)
     # Model run - relay
     logging.info("Starting training for relay sample")
     relay_df = df[df["header_from"] != "self_build"]
+    relay_df = make_balanced_sample(relay_df)
     run_out_dir = os.path.join(out_dir, "4_relay")
     do_model_run(relay_df, run_out_dir)
     # Model run - no entities
@@ -425,11 +431,12 @@ def main():
     no_entity_features = [f for f in FEATURES if f != "entity"]
     no_entity_cat_features = [f for f in CAT_FEATURES if f != "entity"]
     run_out_dir = os.path.join(out_dir, "5_no_entity")
-    do_model_run(df, run_out_dir, no_entity_features, no_entity_cat_features)
+    do_model_run(balanced_df, run_out_dir, no_entity_features, no_entity_cat_features)
     # Model run - slot start times
     logging.info("Starting training for timings since slot start")
     run_out_dir = os.path.join(out_dir, "6_full_time_pred")
-    do_model_run(df, run_out_dir, predictor="atts_arrival_time_ms")
+    slot_start_df = make_balanced_sample(df, predictor="atts_arrival_time_ms")
+    do_model_run(slot_start_df, run_out_dir, predictor="atts_arrival_time_ms")
     # Create markdown report
     logging.info("Generating model report")
     generate_and_save_model_report(out_dir, run_time, sample_id)
