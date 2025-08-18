@@ -195,7 +195,7 @@ def save_pr_curve_for_model(
         dpi=144 * 3,
         bbox_inches="tight",
     )
-    plt.close() 
+    plt.close()
 
 
 def compute_feature_importance_for_model(
@@ -237,7 +237,7 @@ def save_shap_beeswarm_for_model(
         dpi=144 * 3,
         bbox_inches="tight",
     )
-    plt.close() 
+    plt.close()
 
 
 def update_model_report_with_sample_outputs(
@@ -375,19 +375,34 @@ def parse_configuration():
         type=str,
         default=None,
         help="ID of the data sample. Used to read the data to train the models. "
-        "No defaults. Must be provded by user.",
+        "No defaults. Must be provided by user if train_models is set to True.",
     )
+    parser.add_argument(
+        "--train_models",
+        action="store_true",
+        help="Runs model training and generates the corresponding report."
+    )
+    parser.add_argument(
+        "--only_report",
+        dest="train_models",
+        action="store_false",
+        help="Only genertes model report susing the latest model run."
+    )
+    parser.set_defaults(train_models=True) 
     args = parser.parse_args()
     config = {
         "data_dir": args.data_dir,
         "sample_id": args.sample_id,
+        "train_models": args.train_models,
     }
-    if not config["sample_id"]:
-        raise ValueError("Sample ID must be provided. Use --sample_id argument.")
+    if not config["sample_id"] and config["train_models"]:
+        raise ValueError(
+            "Sample ID must be provided when train_models=True. Use --sample_id argument."
+        )
     return config
 
 
-def make_balanced_sample(df:pd.DataFrame, predictor:str=PREDICTOR)->pd.DataFrame:
+def make_balanced_sample(df: pd.DataFrame, predictor: str = PREDICTOR) -> pd.DataFrame:
     late_df = df[df[predictor] > 4500]
     sample_size = len(late_df)
     early_df = df[df[predictor] <= 4500].sample(n=sample_size)
@@ -395,48 +410,70 @@ def make_balanced_sample(df:pd.DataFrame, predictor:str=PREDICTOR)->pd.DataFrame
     return balanced_df
 
 
+def get_latest_model_run_time(data_dir: str) -> datetime.datetime:
+    models_dir = os.path.join(data_dir, "model_outputs")
+    run_dirs = []
+    for run_dir in os.listdir(models_dir):
+        try:
+            run_time = datetime.datetime.strptime(run_dir, "%d-%m-%Y_%H:%M:%S")
+            run_dirs.append(run_time)
+        except:
+            pass
+    run_dirs.sort()
+    return run_dirs[-1]
+
+
 def main():
     # Config
     config = parse_configuration()
     data_dir = config["data_dir"]
     sample_id = config["sample_id"]
-    run_time = datetime.datetime.now()
-    out_dir = os.path.join(
-        data_dir, "model_outputs", run_time.strftime("%d-%m-%Y_%H:%M:%S")
-    )
-    # Load data
-    df = load_data(data_dir, sample_id)
-    # Model run - original data
-    logging.info("Starting training for original sample")
-    run_out_dir = os.path.join(out_dir, "1_original")
-    do_model_run(df, run_out_dir)
-    # Model run - balanced sample
-    balanced_df = make_balanced_sample(df)
-    run_out_dir = os.path.join(out_dir, "2_balanced")
-    do_model_run(balanced_df, run_out_dir)
-    # Model run - self_build
-    logging.info("Starting training for self-builder sample")
-    self_build_df = df[df["header_from"] == "self_build"]
-    self_build_df = make_balanced_sample(self_build_df)
-    run_out_dir = os.path.join(out_dir, "3_self_build")
-    do_model_run(self_build_df, run_out_dir)
-    # Model run - relay
-    logging.info("Starting training for relay sample")
-    relay_df = df[df["header_from"] != "self_build"]
-    relay_df = make_balanced_sample(relay_df)
-    run_out_dir = os.path.join(out_dir, "4_relay")
-    do_model_run(relay_df, run_out_dir)
-    # Model run - no entities
-    logging.info("Starting training for no entity feature sample")
-    no_entity_features = [f for f in FEATURES if f != "entity"]
-    no_entity_cat_features = [f for f in CAT_FEATURES if f != "entity"]
-    run_out_dir = os.path.join(out_dir, "5_no_entity")
-    do_model_run(balanced_df, run_out_dir, no_entity_features, no_entity_cat_features)
-    # Model run - slot start times
-    logging.info("Starting training for timings since slot start")
-    run_out_dir = os.path.join(out_dir, "6_full_time_pred")
-    slot_start_df = make_balanced_sample(df, predictor="atts_arrival_time_ms")
-    do_model_run(slot_start_df, run_out_dir, predictor="atts_arrival_time_ms")
+    train_models = config["train_models"]
+    if train_models:
+        run_time = datetime.datetime.now()
+        out_dir = os.path.join(
+            data_dir, "model_outputs", run_time.strftime("%d-%m-%Y_%H:%M:%S")
+        )
+        # Load data
+        df = load_data(data_dir, sample_id)
+        # Model run - original data
+        logging.info("Starting training for original sample")
+        run_out_dir = os.path.join(out_dir, "1_original")
+        do_model_run(df, run_out_dir)
+        # Model run - balanced sample
+        balanced_df = make_balanced_sample(df)
+        run_out_dir = os.path.join(out_dir, "2_balanced")
+        do_model_run(balanced_df, run_out_dir)
+        # Model run - self_build
+        logging.info("Starting training for self-builder sample")
+        self_build_df = df[df["header_from"] == "self_build"]
+        self_build_df = make_balanced_sample(self_build_df)
+        run_out_dir = os.path.join(out_dir, "3_self_build")
+        do_model_run(self_build_df, run_out_dir)
+        # Model run - relay
+        logging.info("Starting training for relay sample")
+        relay_df = df[df["header_from"] != "self_build"]
+        relay_df = make_balanced_sample(relay_df)
+        run_out_dir = os.path.join(out_dir, "4_relay")
+        do_model_run(relay_df, run_out_dir)
+        # Model run - no entities
+        logging.info("Starting training for no entity feature sample")
+        no_entity_features = [f for f in FEATURES if f != "entity"]
+        no_entity_cat_features = [f for f in CAT_FEATURES if f != "entity"]
+        run_out_dir = os.path.join(out_dir, "5_no_entity")
+        do_model_run(
+            balanced_df, run_out_dir, no_entity_features, no_entity_cat_features
+        )
+        # Model run - slot start times
+        logging.info("Starting training for timings since slot start")
+        run_out_dir = os.path.join(out_dir, "6_full_time_pred")
+        slot_start_df = make_balanced_sample(df, predictor="atts_arrival_time_ms")
+        do_model_run(slot_start_df, run_out_dir, predictor="atts_arrival_time_ms")
+    else:
+        run_time = get_latest_model_run_time(data_dir)
+        out_dir = os.path.join(
+            data_dir, "model_outputs", run_time.strftime("%d-%m-%Y_%H:%M:%S")
+        )
     # Create markdown report
     logging.info("Generating model report")
     generate_and_save_model_report(out_dir, run_time, sample_id)
