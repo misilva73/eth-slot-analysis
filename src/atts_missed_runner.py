@@ -115,7 +115,7 @@ def main():
     # Get list of missed slots (add 2 slot buffer)
     missed_slots = query.get_missed_slots(db_url, slot_start - 2, slot_end + 2)
     logging.info(f"Gathering attestations for {len(missed_slots)} missed slots.")
-    missed_slot_df = pd.DataFrame({"slot": missed_slots})
+    missed_slot_df = pd.DataFrame({"slot": list(missed_slots)})
     # Collect attestations for sampled slots
     get_and_save_attestations(
         missed_slot_df,
