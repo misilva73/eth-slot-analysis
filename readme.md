@@ -14,15 +14,6 @@ An empirical analysis of slot timings on Ethereum
 
 ### Attestation arrivals
 
-#### Missed slot attestations
-
-Here, we are focussed on pure attestation propagation time.
-
-- [ ] Collect larger sample of attestations from missing slots
-- [ ] Join with data on attestor - entity, country, client (using ethseer or [validator_metadata](https://dune.com/data/dune.rig_ef.validator_metadata)?)
-- [ ] Analyze late arrivals (i.e. after 1.5s). Are they overrepresented across any attestor feature?
-- [ ] Build regression model to predict attestation arrival and compute feature importance.
-
 #### Non-missed slot attestations
 
 Here, we are focussed on the overall attestation arrivals, which includes bock propagation, block execution and validation and attestation propagation. Besides being a more realistic scenario than missed slots, we have a wider set of factor to account for late arrivals.
