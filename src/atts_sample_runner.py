@@ -57,8 +57,8 @@ def get_slot_sample_df(
         how="inner",
     )
     # Filter relay data to exclude negative request times
-    relay_df = relay_df[relay_df["request_datetime"] >= relay_df["slot_start_datetime"]]
-    relay_df = relay_df[relay_df["publish_datetime"] >= relay_df["slot_start_datetime"]]
+    relay_df = relay_df[(relay_df["request_datetime"] >= relay_df["slot_start_datetime"]) | (relay_df["request_datetime"].isna())]
+    relay_df = relay_df[(relay_df["publish_datetime"] >= relay_df["slot_start_datetime"]) | (relay_df["publish_datetime"].isna())]
     # Sample slots by category and combine
     self_build_n = len(self_build_df)
     relay_n = len(relay_df)
@@ -98,8 +98,8 @@ def get_slot_sample_df(
         df["header_from"] == "flashbots", df["publish_time_ms"], publish_time_ms_arr
     )
     # Get fastest publish by slot
-    relay_df = (
-        relay_df
+    df = (
+        df
         .sort_values(by="publish_time_ms", ascending=False)
         .groupby("slot")
         .first(skipna=False)
