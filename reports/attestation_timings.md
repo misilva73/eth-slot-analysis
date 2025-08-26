@@ -32,7 +32,7 @@ WIP
 
 ## Block propagation
 
-Out of the 53528 slots in our dataset, 49.9% don't have relay data. These slots were either provided by other relays or were self-built. The remaining 39.4% were published by Ultrasound, 5.6% by Flashbots, and 5.1% by Titan. For each slot, we have block arrivals for 109 community nodes and 29 internal nodes. Nodes have a variety of clients and geographical regions.
+Out of the 51139 slots in our dataset, 47.6% don't have relay data. These slots were either provided by other relays or were self-built. The remaining 41.3% were published by Ultrasound, 5.8% by Flashbots, and 5.3% by Titan. For each slot, we have block arrivals for 109 community nodes and 29 internal nodes. Nodes have a variety of clients and geographical regions.
 
 Focusing on the subset of slots for which we have relay data, we can see in the following two plots the distributions of the block propagation since the block was published, split by node client and node country. The boxplots show the three quartiles in the colored boxes and the variability outside the upper and lower quartiles in the extending lines. The dots are outliers.
 
