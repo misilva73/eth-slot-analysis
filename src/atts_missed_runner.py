@@ -3,20 +3,33 @@ import sys
 import json
 import logging
 import argparse
-import numpy as np
 import pandas as pd
 from tqdm import tqdm
 from pathlib import Path
-from typing import List, Tuple
+from typing import List
 
 
 sys.path.append(str(Path(__file__).parent))
-from atts_sample_runner import get_and_save_attestations
 import query
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
+
+
+def get_and_save_committee_attestations(
+    slot_list: List[int],
+    db_url: str,
+    out_dir: str,
+) -> None:
+    atts_df = pd.DataFrame()
+    for slot in tqdm(slot_list):
+        temp_df = query.get_committee_attestations_for_slot(slot, db_url)
+        atts_df = pd.concat([atts_df, temp_df], ignore_index=True)
+    # Save attestations
+    atts_file_path = os.path.join(out_dir, "sample_atts.parquet")
+    atts_df.to_parquet(atts_file_path, index=False)
+    logging.info(f"Attestations saved to {atts_file_path}")
 
 
 def parse_configuration():
@@ -113,12 +126,13 @@ def main():
         "clickhouse.xatu.ethpandaops.io:443/default?protocol=https"
     )
     # Get list of missed slots (add 2 slot buffer)
-    missed_slots = query.get_missed_slots(db_url, slot_start - 2, slot_end + 2)
-    logging.info(f"Gathering attestations for {len(missed_slots)} missed slots.")
-    missed_slot_df = pd.DataFrame({"slot": list(missed_slots)})
+    missed_slots_set = query.get_missed_slots(db_url, slot_start - 2, slot_end + 2)
+    missed_slots_list = list(missed_slots_set)
+    missed_slots_list.sort()
+    logging.info(f"Gathering attestations for {len(missed_slots_list)} missed slots.")
     # Collect attestations for sampled slots
-    get_and_save_attestations(
-        missed_slot_df,
+    get_and_save_committee_attestations(
+        missed_slots_list,
         db_url,
         out_dir,
     )
