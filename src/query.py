@@ -169,7 +169,6 @@ def get_committee_attestations_for_slot(slot: int, db_url: str) -> pd.DataFrame:
 
 
 def get_validator_ethseer_info(db_url: str) -> pd.DataFrame:
-    # ignoring pubkey for now; may be useful later
     query_str = f"""
         SELECT TOP 1 WITH TIES 
             index, 
