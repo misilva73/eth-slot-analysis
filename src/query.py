@@ -131,6 +131,43 @@ def get_attestations_for_slot(slot: int, db_url: str) -> pd.DataFrame:
     return atts_df
 
 
+def get_committee_attestations_for_slot(slot: int, db_url: str) -> pd.DataFrame:
+    # Define dates for queries (with some buffer)
+    start_date_str = convert_slot_number_to_date_string(slot - 5)
+    end_date_str = convert_slot_number_to_date_string(slot + 5)
+    # Define and run query
+    query_str = f"""
+        SELECT slot,
+            meta_client_name AS node_name,
+            any(meta_client_geo_country) AS node_country,
+            attesting_validator_index AS atts_validator,
+            attesting_validator_committee_index AS atts_subnet,
+            MIN(propagation_slot_start_diff) AS atts_arrival_time_ms
+        FROM default.libp2p_gossipsub_beacon_attestation FINAL
+        WHERE slot_start_date_time BETWEEN toDateTime('{start_date_str}') AND toDateTime('{end_date_str}')
+            AND meta_network_name = 'mainnet'
+            AND slot = {slot}
+            AND attesting_validator_index IS NOT NULL
+            AND propagation_slot_start_diff >= 0
+            AND propagation_slot_start_diff <= 12000
+            AND startsWith(
+                meta_client_name,
+                'ethpandaops/mainnet/xatu-tysm'
+            )
+            AND endsWith(
+                meta_client_name,
+                '0-1'
+            )
+        GROUP BY slot,
+            meta_client_name,
+            attesting_validator_index,
+            attesting_validator_committee_index
+    """
+    engine = create_engine(db_url)
+    atts_df = pd.read_sql(query_str, con=engine)
+    return atts_df
+
+
 def get_validator_ethseer_info(db_url: str) -> pd.DataFrame:
     # ignoring pubkey for now; may be useful later
     query_str = f"""
