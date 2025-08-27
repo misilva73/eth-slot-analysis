@@ -19,9 +19,7 @@ First, we look into block arrival times. The block arrival time corresponds to t
 
 Second, we analyze the attestations for missed slots. In these slots, the block payload was never made available, and thus, we know that validators waited until the 4-second deadline to attest. This allows us to compute the pure attestation propagation time by taking the attestation arrival time in the beacon node minus 4 seconds. This is the light-blue component in the diagram above.
 
-Third, 
-
-WIP
+The third and final metric attempts to estimate the total time required to propagate the block through the P2P layer, including execution, validation, and propagation of attestations. It corresponds to the yellow, pink, and light blue components of the diagram. Similarly to the block propagation metric, we compute the attestation arrival since the block was published by the relay, to account for timing games. We use the same publish times shared by the Ultrasound, Flashbots, and Titan relays as in the block propagation metric.
 
 ### Data gathering
 
@@ -88,7 +86,25 @@ For additional plots and analysis, refer to the notebook [2.4-committee-attestat
 
 ## Attestation arrivals
 
-WIP
+For this part of the analysis, we took a random sample of 4963 slots from the same slots with relay data used in the block propagation section. From this sample, 80.4% have a header from Ultrasound, 10.9% from Flashbots, and 8.7% from Titan. The next plot shows the distribution of the attestation arrivals (computed as milliseconds since the block was published by the relay) for all slots and all subnets.
+
+![atts-time-dist](./img/atts-time-dist.png)
+
+Here, we can see a clear bimodal distribution, with modes around 1.2 seconds and 3 seconds. This means that there are two groups of attestations - fast and slow. The source of the bimodal distribution is neither the header source (as shown in the plot below, the distributions are pretty similar across the various relays) nor specific slots (as evidenced by the same trend at individual slot levels).
+
+![atts-time-source](./img/atts-time-source.png)
+
+What appears to explain the bimodal shape is the source of the attestations, i.e., the entity making the attestation. This aligns with our observations on the missed slots. Yet, the trend is even more pronounced for the arrival times of attestation.
+
+| ![atts-time-entity-1](./img/atts-time-entity-1.png) | ![atts-time-entity-2](./img/atts-time-entity-2.png)|
+|:---:|:---:|
+|  |  |
+
+Besides the overall distribution, we computed the 95th percentile attestation within each subnet. In other words, this is the time it takes for 95% of the attestations in a given subnet to arrive (counting since the block was published by the relay). The following histogram shows the distribution of this metric for each slot and subnet.
+
+![atts-time-p95](./img/atts-time-p95.png)
+
+The average P95 is 3590ms, while the 95th percentile of the P95 metric is 4217ms, which is still below the 4.5-second mark required for the 6-second slot proposal.
 
 ## Factors impacting late attestations
 
