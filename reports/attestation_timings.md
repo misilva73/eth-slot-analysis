@@ -76,13 +76,15 @@ Another important consideration when analyzing attestations is the origin of the
 
 We can already see a significant variation among entities. With the information on the client configuration and the geographical locations, it is impossible to pinpoint precisely why some entities are slower attesters than others.
 
-A notable example is Kiln. In our data, they were responsible for a large proportion of attestations arriving between 1500ms and 3250ms, and they had the largest median propagation time. After seeing these results, we contacted them directly, and they uncovered a misconfiguration in their client that significantly improved their times. In fact, a week after their fix, we were able to observe a decrease in the overall 95th percentile from 2066ms to 1805ms. Note, however, that this new percentile was computed over a different sample of slots, which is outside the scope of this analysis. Nevertheless, this points to the importance of investigating more carefully the entities with late attestations to try and solve the root cause of the delays.
+A notable example is Kiln. In our data, they were responsible for a large proportion of attestations arriving between 1500ms and 3250ms, and they had the largest median propagation time. After seeing these results, we contacted them directly, and they uncovered a misconfiguration in their client that significantly improved their times. Looking at a sample of 183 missed slots two weeks after our main sample (i.e., between slots 12344420 and 12394820), **we observe a decrease in the overall 95th percentile from 2066ms to 1782ms**. In addition, we can see in the plot below that the weight of Kiln in the later attestations changed significantly. This points to the importance of investigating more carefully the entities with late attestations to try and solve the root cause of the delays.
+
+![atts-prop-entity-3](./img/atts-prop-entity-3.png)
 
 Until now, we were looking at the distribution of the data across all slots and subnets in our sample. However, another relevant metric is the 66th percentile over the subnet. In other words, given a slot and a subnet, when does the subnet observe a supermajority of attestations? The distribution below illustrates this metric over the various slots and subnets in our data. Interestingly, all subnets in all missed slots take less than 830ms to reach supermajority. The mean is 640ms.
 
 ![atts-prop-super](./img/atts-prop-super.png)
 
-For additional plots and analysis, refer to the notebook [2.4-committee-attestations-missed-slots.ipyn](../notebooks/2.4-committee-attestations-missed-slots.ipynb).
+For additional plots and analysis, refer to the notebook [2.4-committee-attestations-missed-slots.ipyn](../notebooks/2.4-committee-attestations-missed-slots.ipynb). The notebook [2.5-committee-attestations-missed-slots-v2.ipynb](../notebooks/2.5-committee-attestations-missed-slots-v2.ipynb) contains the same analysis, but using a sample of missed slots 2 weeks after.
 
 ## Attestation arrivals
 
