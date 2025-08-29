@@ -104,7 +104,7 @@ What appears to explain the bimodal shape is the source of the attestations, i.e
 <td><img src="./img/atts-time-entity-1.png" alt="atts-time-entity-1"/></td>
 <td><img src="./img/atts-time-entity-2.png" alt="atts-time-entity-2"/></td>
 </tr>
-</table>                                                    |
+</table>
 
 Besides the overall distribution, we computed the 95th percentile attestation within each subnet. In other words, this is the time it takes for 95% of the attestations in a given subnet to arrive (counting since the block was published by the relay). The following histogram shows the distribution of this metric for each slot and subnet.
 
