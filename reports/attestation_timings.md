@@ -68,9 +68,12 @@ Looking at the same distribution by receiver node region (in the boxplots below)
 
 Another important consideration when analyzing attestations is the origin of the attestation, i.e., the attester. Using the mapping from [ethseer.io](https://ethseer.io/?network=mainnet), we extracted the validator entity of the attester. Then, we plotted the propagation time per entity (on the left) and the weight of each entity in the attestations arriving at each 50-ms bucket in the slot (on the right).
 
-| ![atts-prop-entity-1](./img/atts-prop-entity-1.png) | ![atts-prop-entity-2](./img/atts-prop-entity-2.png) |
-| :-------------------------------------------------: | :-------------------------------------------------: |
-|                                                     |                                                     |
+<table>
+<tr>
+<td><img src="./img/atts-prop-entity-1.png" alt="atts-prop-entity-1"/></td>
+<td><img src="./img/atts-prop-entity-2.png" alt="atts-prop-entity-2"/></td>
+</tr>
+</table>  
 
 We can already see a significant variation among entities. With the information on the client configuration and the geographical locations, it is impossible to pinpoint precisely why some entities are slower attesters than others.
 
@@ -96,9 +99,12 @@ Here, we can see a clear bimodal distribution, with modes around 1.2 seconds and
 
 What appears to explain the bimodal shape is the source of the attestations, i.e., the entity making the attestation. This aligns with our observations on the missed slots. Yet, the trend is even more pronounced for the arrival times of attestation.
 
-| ![atts-time-entity-1](./img/atts-time-entity-1.png) | ![atts-time-entity-2](./img/atts-time-entity-2.png) |
-| :-------------------------------------------------: | :-------------------------------------------------: |
-|                                                     |                                                     |
+<table>
+<tr>
+<td><img src="./img/atts-time-entity-1.png" alt="atts-time-entity-1"/></td>
+<td><img src="./img/atts-time-entity-2.png" alt="atts-time-entity-2"/></td>
+</tr>
+</table>                                                    |
 
 Besides the overall distribution, we computed the 95th percentile attestation within each subnet. In other words, this is the time it takes for 95% of the attestations in a given subnet to arrive (counting since the block was published by the relay). The following histogram shows the distribution of this metric for each slot and subnet.
 
@@ -142,9 +148,10 @@ As for the entity features, they don't appear significant in the logistic regres
 
 To address this, we also trained a set of tree-based models, which are better suited for capturing such non-linearities. The best performer was a [LightGBM classifier](https://lightgbm.readthedocs.io/en/latest/Python-Intro.html). It achieved an F1-score of 0.762 and an accuracy of 0.759 on the training set.
 
-<div style="display: flex; align-items: flex-start; gap: 1rem;">
-
-<img src="../data/model_outputs/26-08-2025_19:35:20/4_relay/LGBMClassifier/pr_curve.png" alt="pr_curve" width="300"/>
+<table>
+<tr>
+<td><img src="../data/model_outputs/26-08-2025_19:35:20/4_relay/LGBMClassifier/pr_curve.png" alt="pr_curve" width="300"/></td>
+<td>
 
 ```python
               precision    recall  f1-score   support
@@ -156,9 +163,9 @@ To address this, we also trained a set of tree-based models, which are better su
    macro avg      0.759     0.759     0.759    117835
 weighted avg      0.759     0.759     0.759    117835
 ```
-
-</div>
-</p>
+</td>
+</tr>
+</table>
 
 In this model, entity features showed much greater relevance, as indicated by both [feature importance rankings](https://scikit-learn.org/stable/auto_examples/ensemble/plot_forest_importances.html) and [Shapley values](https://shap.readthedocs.io/en/latest/example_notebooks/overviews/An%20introduction%20to%20explainable%20AI%20with%20Shapley%20values.html) shown next. To help with interpretation, red dots on the right side of the beeswarm plot indicate that a feature contributes positively to late arrivals. In contrast, blue dots on the right side of the beeswarm plot suggest that a feature contributes negatively to late arrivals. For example, Stakewise has identified dots on the right side of the plot, indicating that attestations from this entity are more likely to be late than on time.
 
