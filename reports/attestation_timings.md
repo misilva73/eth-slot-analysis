@@ -34,21 +34,29 @@ Out of the 51139 slots in our dataset, 47.6% don't have relay data. These slots 
 
 Focusing on the subset of slots for which we have relay data, we can see in the following two plots the distributions of the block propagation since the block was published, split by node client and node country. The boxplots show the three quartiles in the colored boxes and the variability outside the upper and lower quartiles in the extending lines. The dots are outliers.
 
-![block-prop-client](https://raw.githubusercontent.com/misilva73/eth-slot-analysis/c2366396cccee93bb507b137912baa82fe8ff228/reports//img/block-prop-client.png)
+![block-prop-client](https://raw.githubusercontent.com/misilva73/eth-slot-analysis/c2366396cccee93bb507b137912baa82fe8ff228/reports/img/block-prop-client.png)
 
-![block-prop-country](https://raw.githubusercontent.com/misilva73/eth-slot-analysis/c2366396cccee93bb507b137912baa82fe8ff228/reports//img/block-prop-country.png)
+![block-prop-country](https://raw.githubusercontent.com/misilva73/eth-slot-analysis/c2366396cccee93bb507b137912baa82fe8ff228/reports/img/block-prop-country.png)
 
-There are some variations by client, with Lodestar and Caplin showing slightly larger propagation times. Countries also vary, with the Netherlands showing a surprisingly skewed distribution. After the Netherlands, Australia, India, and Nigeria show the longer propagation times.
+There are some variations by client, with Lodestar and Caplin showing slightly larger propagation times. Recall, that Caplin is the consensus client embedded in the Erigon execution client. It acts like any other Consensus client, but it is fully integrated into the execution layer.
 
-Independent of the observed variations, most nodes still receive the block in under 1 second. The 95th percentile of block propagation since it was published by the relay is 816 ms for Xatu's internal nodes and 804 ms for the community nodes.
+Countries also vary, with the Netherlands showing a surprisingly skewed distribution. However, the Netherlands only has 99 observations in our dataset, while the remaining countries have between 45 and 50 thousand, so the sample may not be representative. After the Netherlands, Australia, India, and Nigeria show the longer propagation times.
+
+Independent of the observed variations, most nodes still receive the block in under 1 second. The 95th percentile of block propagation since it was published by the relay is 816 ms for Xatu's internal nodes and 804 ms for the community nodes. The following plot shows the CDF of the block propagation times since the block was published by the relay.
+
+![block-prop-cdf](https://raw.githubusercontent.com/misilva73/eth-slot-analysis/reports/img/block-prop-cdf.png)
 
 The final plot shows the distribution of the block arrival times since the start of the slot by header source. As we previously explained, this is an overestimation of the block propagation time as it also includes the time spent block building and interacting with mev-boost. However, it allows us to understand how the sub-sample of relay slots compares to the remaining slots.
 
-![block-arr-source](https://raw.githubusercontent.com/misilva73/eth-slot-analysis/c2366396cccee93bb507b137912baa82fe8ff228/reports/img/block-arr-source.png)
+![block-arr-source](https://raw.githubusercontent.com/misilva73/eth-slot-analysis/reports/img/block-arr-source.png)
 
 Interestingly, the slots without relay data have slightly shorter propagation times, but they show more outliers and a larger standard deviation. The 95th percentiles are comparable, with the "other" slots taking 3292ms, while the slots with relay data take 3337ms. This indicates that the observed timings with relay data are likely a reasonable estimate.
 
 Additionally, the fact that block arrivals are so close to the attestation deadline while the actual propagation takes less than 1 second suggests that the start of the slot is not being solely used for block propagation. Thus, there is likely some slack in the attestation timings in the current slot structure.
+
+This is further reinforced by the relationship between block propagation and the block size. One would expect these two metrics to be positively correlated. However, the metrics have a correlation of just 0.004. We can also see their non-linear relationship in the scatterplot below.
+
+![block-prop-vs-size]([image.png](https://raw.githubusercontent.com/misilva73/eth-slot-analysis/reports/img/block-prop-vs-size.png))
 
 For additional plots and analysis, refer to the notebook [2.3-beacon-block-arrivals-with-relay.ipynb](https://github.com/misilva73/eth-slot-analysis/tree/c2366396cccee93bb507b137912baa82fe8ff228/notebooks/2.3-beacon-block-arrivals-with-relay.ipynb).
 
@@ -56,7 +64,7 @@ For additional plots and analysis, refer to the notebook [2.3-beacon-block-arriv
 
 There are 207 missed slots in our sample. For each, we observe the attestations from subnets 0 and 1. We have three nodes listening to the same subnets across four regions - the Netherlands, India, the US, and Australia. The following plot shows the overall distribution of all these attestation propagation times (i.e., the milliseconds of attestation arrival since the 4-second mark in the slot).
 
-![atts-prop-dist](https://raw.githubusercontent.com/misilva73/eth-slot-analysis/c2366396cccee93bb507b137912baa82fe8ff228/reports//img/atts-prop-dist.png)
+![atts-prop-dist](https://raw.githubusercontent.com/misilva73/eth-slot-analysis/c2366396cccee93bb507b137912baa82fe8ff228/reports/img/atts-prop-dist.png)
 
 As expected, most attestations take less than 1 second to propagate, with an average of 831ms. However, we do see a large right tail in the distribution, with some attestations arriving later than 1 second. In fact, the overall 95th percentile is 2066ms.
 
@@ -64,7 +72,7 @@ We should note that the timings we are seeing are likely an overestimation. With
 
 Looking at the same distribution by receiver node region (in the boxplots below), we see that even though India and Australia nodes show slightly longer times, the difference is not materially different (around 100ms).
 
-![atts-prop-country](https://raw.githubusercontent.com/misilva73/eth-slot-analysis/c2366396cccee93bb507b137912baa82fe8ff228/reports//img/atts-prop-country.png)
+![atts-prop-country](https://raw.githubusercontent.com/misilva73/eth-slot-analysis/c2366396cccee93bb507b137912baa82fe8ff228/reports/img/atts-prop-country.png)
 
 Another important consideration when analyzing attestations is the origin of the attestation, i.e., the attester. Using the mapping from [ethseer.io](https://ethseer.io/?network=mainnet), we extracted the validator entity of the attester. Then, we plotted the propagation time per entity (on the left) and the weight of each entity in the attestations arriving at each 50-ms bucket in the slot (on the right).
 
@@ -79,11 +87,15 @@ We can already see a significant variation among entities. With the information 
 
 A notable example is Kiln. In our data, they were responsible for a large proportion of attestations arriving between 1500ms and 3250ms, and they had the largest median propagation time. After seeing these results, we contacted them directly, and they uncovered a misconfiguration in their client that significantly improved their times. Looking at a sample of 183 missed slots two weeks after our main sample (i.e., between slots 12344420 and 12394820), **we observe a decrease in the overall 95th percentile from 2066ms to 1782ms**. In addition, we can see in the plot below that the weight of Kiln in the later attestations changed significantly. This points to the importance of investigating more carefully the entities with late attestations to try and solve the root cause of the delays.
 
-![atts-prop-entity-3](https://raw.githubusercontent.com/misilva73/eth-slot-analysis/c2366396cccee93bb507b137912baa82fe8ff228/reports//img/atts-prop-entity-3.png)
+![atts-prop-entity-3](https://raw.githubusercontent.com/misilva73/eth-slot-analysis/c2366396cccee93bb507b137912baa82fe8ff228/reports/img/atts-prop-entity-3.png)
 
-Until now, we were looking at the distribution of the data across all slots and subnets in our sample. However, another relevant metric is the 66th percentile over the subnet. In other words, given a slot and a subnet, when does the subnet observe a supermajority of attestations? The distribution below illustrates this metric over the various slots and subnets in our data. Interestingly, all subnets in all missed slots take less than 830ms to reach supermajority. The mean is 640ms.
+Until now, we were looking at the distribution of the data across all slots and subnets in our sample. However, another relevant metric is the 66th percentile over the subnet. In other words, given a slot and a subnet, when does the subnet observe a supermajority of attestations? The distribution below illustrates this metric over the various slots and subnets in our data. Note that here we are taking the first attestation observed for each attester (i.e. we are using the fastest node). Interestingly, all subnets in all missed slots take less than 830ms to reach supermajority. The mean is 640ms.
 
-![atts-prop-super](https://raw.githubusercontent.com/misilva73/eth-slot-analysis/c2366396cccee93bb507b137912baa82fe8ff228/reports//img/atts-prop-super.png)
+![atts-prop-super](https://raw.githubusercontent.com/misilva73/eth-slot-analysis/c2366396cccee93bb507b137912baa82fe8ff228/reports/img/atts-prop-super.png)
+
+The same analysis can be done for the 95th percentile. The distribution is shown below. The mean now is 1572ms, while the 95th percentile is 1962ms.
+
+![atts-prop-p95]([image.png](https://raw.githubusercontent.com/misilva73/eth-slot-analysis/reports/img/atts-prop-p95.png))
 
 For additional plots and analysis, refer to the notebook [2.4-committee-attestations-missed-slots.ipyn](https://github.com/misilva73/eth-slot-analysis/tree/c2366396cccee93bb507b137912baa82fe8ff228/notebooks/2.4-committee-attestations-missed-slots.ipynb). The notebook [2.5-committee-attestations-missed-slots-v2.ipynb](https://github.com/misilva73/eth-slot-analysis/tree/c2366396cccee93bb507b137912baa82fe8ff228/notebooks/2.5-committee-attestations-missed-slots-v2.ipynb) contains the same analysis, but using a sample of missed slots 2 weeks after.
 
@@ -91,7 +103,7 @@ For additional plots and analysis, refer to the notebook [2.4-committee-attestat
 
 For this part of the analysis, we took a random sample of 4963 slots from the same slots with relay data used in the block propagation section. From this sample, 80.4% have a header from Ultrasound, 10.9% from Flashbots, and 8.7% from Titan. The next plot shows the distribution of the attestation arrivals (computed as milliseconds since the block was published by the relay) for all slots and all subnets.
 
-![atts-time-dist](https://raw.githubusercontent.com/misilva73/eth-slot-analysis/c2366396cccee93bb507b137912baa82fe8ff228/reports//img/atts-time-dist.png)
+![atts-time-dist](https://raw.githubusercontent.com/misilva73/eth-slot-analysis/reports/img/atts-time-dist.png)
 
 Here, we can see a clear bimodal distribution, with modes around 1.2 seconds and 3 seconds. This means that there are two groups of attestations - fast and slow. The source of the bimodal distribution is neither the header source (as shown in the plot below, the distributions are pretty similar across the various relays) nor specific slots (as evidenced by the same trend at individual slot levels).
 
@@ -106,9 +118,11 @@ What appears to explain the bimodal shape is the source of the attestations, i.e
 </tr>
 </table>
 
+Without more information on the attesters, such as client configurations and geographical locations, it is impossible to pinpoint the exact reasons for the bi-modal shape of attestations. However, there are a few possibilities. One could be the network connectivity. Better locations and peering are expected to lead to faster attestations. Another could be the attestation logic implemented by the validator entity. Some entities attest quickly to ensure their attestation arrives on time. Others wait until they have observed other attestations to better understand which block to support to increase the probability of making their attestation canonical. Finally, similarly to what happened with Kiln, some entities may have misconfigurations or be using suboptimal client versions.
+
 Besides the overall distribution, we computed the 95th percentile attestation within each subnet. In other words, this is the time it takes for 95% of the attestations in a given subnet to arrive (counting since the block was published by the relay). The following histogram shows the distribution of this metric for each slot and subnet.
 
-![atts-time-p95](https://raw.githubusercontent.com/misilva73/eth-slot-analysis/c2366396cccee93bb507b137912baa82fe8ff228/reports//img/atts-time-p95.png)
+![atts-time-p95](https://raw.githubusercontent.com/misilva73/eth-slot-analysis/c2366396cccee93bb507b137912baa82fe8ff228/reports/img/atts-time-p95.png)
 
 The average P95 is 3590ms, while the 95th percentile of the P95 metric is 4217ms, which is still below the 4.5-second mark required for the 6-second slot proposal.
 
@@ -138,9 +152,9 @@ The Pseudo R-squared indicates moderate explanatory power, while the Log-Likelih
 
 | Variable                | Coef.   | p-value | Interpretation |
 |--------------------------|---------|---------|----------------|
-| block_gas_used           | +0.1305 | <0.001  | Higher gas usage increases odds of the outcome. |
-| block_blob_count         | +0.0589 | <0.001  | More blobs increase odds of the outcome. |
-| block_tx_count           | -0.0243 | 0.017   | More transactions slightly reduce odds. |
+| block_gas_used           | +0.1305 | <0.001  | Higher gas usage increases the odds of a late arrival. |
+| block_blob_count         | +0.0589 | <0.001  | More blobs increase the odds of a late arrival. |
+| block_tx_count           | -0.0243 | 0.017   | More transactions slightly reduce the odds a late arrival. |
 
 The impact of gas used and the number of blobs is as expected - blocks with higher gas usage tend to take more time to execute, while blocks with more data take longer to propagate. However, the inverse relationship with the number of transactions is unexpected.
 
@@ -198,7 +212,9 @@ In this model, entity features showed much greater relevance, as indicated by bo
 </tr>
 </table>
 
-Solo stakers appear to contribute negatively to late attestations, i.e., they tend to have fewer late attestations than the average validator. Besides the entities, the number of blobs and the gas used continue to show as relevant, which supports the results from the Logistic Regression model. Surprisingly, the 66th percentile block arrival time does not show a clear relationship with late arrivals. Looking at the following scatterplot, which compares this feature with the late arrival rate in the slot, we conclude that block arrivals between 1 second and 3.5 seconds do not significantly impact the rate of late attestations within a slot.
+Solo stakers appear to contribute negatively to late attestations, i.e., they tend to have fewer late attestations than the average validator. Besides the entities, the number of blobs and the gas used continue to show as relevant, which supports the results from the Logistic Regression model.
+
+Surprisingly, the 66th percentile block arrival time does not show a clear relationship with late arrivals. It does have the highest feature importance, but the Shapley values do not show a clear trend. Looking at the following scatterplot, which compares this feature with the late arrival rate in the slot, we see that block arrivals between 1 second and 3.5 seconds do not significantly impact the rate of late attestations within a slot. This suggests that while this feature is relevant, its relationship with late attestations is complex and non-linear. Its impact is likely through interactions with other features such as the attester entity.
 
 ![late-rate-vs-block-arr](https://raw.githubusercontent.com/misilva73/eth-slot-analysis/c2366396cccee93bb507b137912baa82fe8ff228/reports/img/late-rate-vs-block-arr.png)
 
