@@ -156,7 +156,7 @@ The Pseudo R-squared indicates moderate explanatory power, while the Log-Likelih
 | block_blob_count         | +0.0589 | <0.001  | More blobs increase the odds of a late arrival. |
 | block_tx_count           | -0.0243 | 0.017   | More transactions slightly reduce the odds a late arrival. |
 
-The impact of gas used and the number of blobs is as expected - blocks with higher gas usage tend to take more time to execute, while blocks with more data take longer to propagate. However, the inverse relationship with the number of transactions is unexpected.
+The impact of gas used and the number of blobs is as expected - blocks with higher gas usage tend to take more time to execute, while blocks with more data take longer to propagate. However, the inverse relationship with the number of transactions is unexpected. We should note that the correlation between the number of transactions and the late arrival rate in a slot is quite weak (0.015). Thus, the observed relationship is likely due to interactions with other features.
 
 As for the entity features, they don't appear significant in the logistic regression. This is likely due to sparsity and the linear-additive assumptions of the model. Logistic regressions can incorporate categorical variables, but they may struggle when categories are rare or interact in complex ways.
 
