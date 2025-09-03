@@ -10,7 +10,7 @@ The goal of this analysis is to gather a first-level understanding of the feasib
 
 Our analysis focuses on three different metrics, which are illustrated in the diagram below.
 
-![timings_diagram](https://raw.githubusercontent.com/misilva73/eth-slot-analysis/c2366396cccee93bb507b137912baa82fe8ff228/timings_diagram.png)
+![timings_diagram](https://raw.githubusercontent.com/misilva73/eth-slot-analysis/4b2765e537b8e159143dd6b5f255f48685711f48/timings_diagram.png)
 
 First, we look into block arrival times. The block arrival time corresponds to the time when the beacon node first saw the block. From this block arrival, we compute two propagation metrics:
 
