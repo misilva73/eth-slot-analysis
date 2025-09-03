@@ -44,7 +44,7 @@ Countries also vary, with the Netherlands showing a surprisingly skewed distribu
 
 Independent of the observed variations, most nodes still receive the block in under 1 second. The 95th percentile of block propagation since it was published by the relay is 816 ms for Xatu's internal nodes and 804 ms for the community nodes. The following plot shows the CDF of the block propagation times since the block was published by the relay.
 
-![block-prop-cdf](https://raw.githubusercontent.com/misilva73/eth-slot-analysis/4b2765e537b8e159143dd6b5f255f48685711f48/reports/img/block-prop-cdf.png)
+![block-prop-cdf](https://raw.githubusercontent.com/misilva73/eth-slot-analysis/14b4e56a9261d5a4e0651fc9f0d45a8c2aa35983/reports/img/block-prop-cdf.png)
 
 The final plot shows the distribution of the block arrival times since the start of the slot by header source. As we previously explained, this is an overestimation of the block propagation time as it also includes the time spent block building and interacting with mev-boost. However, it allows us to understand how the sub-sample of relay slots compares to the remaining slots.
 
