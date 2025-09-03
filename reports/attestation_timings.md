@@ -44,11 +44,11 @@ Countries also vary, with the Netherlands showing a surprisingly skewed distribu
 
 Independent of the observed variations, most nodes still receive the block in under 1 second. The 95th percentile of block propagation since it was published by the relay is 816 ms for Xatu's internal nodes and 804 ms for the community nodes. The following plot shows the CDF of the block propagation times since the block was published by the relay.
 
-![block-prop-cdf](https://raw.githubusercontent.com/misilva73/eth-slot-analysis/reports/img/block-prop-cdf.png)
+![block-prop-cdf](https://raw.githubusercontent.com/misilva73/eth-slot-analysis/4b2765e537b8e159143dd6b5f255f48685711f48/reports/img/block-prop-cdf.png)
 
 The final plot shows the distribution of the block arrival times since the start of the slot by header source. As we previously explained, this is an overestimation of the block propagation time as it also includes the time spent block building and interacting with mev-boost. However, it allows us to understand how the sub-sample of relay slots compares to the remaining slots.
 
-![block-arr-source](https://raw.githubusercontent.com/misilva73/eth-slot-analysis/reports/img/block-arr-source.png)
+![block-arr-source](https://raw.githubusercontent.com/misilva73/eth-slot-analysis/4b2765e537b8e159143dd6b5f255f48685711f48/reports/img/block-arr-source.png)
 
 Interestingly, the slots without relay data have slightly shorter propagation times, but they show more outliers and a larger standard deviation. The 95th percentiles are comparable, with the "other" slots taking 3292ms, while the slots with relay data take 3337ms. This indicates that the observed timings with relay data are likely a reasonable estimate.
 
@@ -56,9 +56,9 @@ Additionally, the fact that block arrivals are so close to the attestation deadl
 
 This is further reinforced by the relationship between block propagation and the block size. One would expect these two metrics to be positively correlated. However, the metrics have a correlation of just 0.004. We can also see their non-linear relationship in the scatterplot below.
 
-![block-prop-vs-size]([image.png](https://raw.githubusercontent.com/misilva73/eth-slot-analysis/reports/img/block-prop-vs-size.png))
+![block-prop-vs-size](https://raw.githubusercontent.com/misilva73/eth-slot-analysis/4b2765e537b8e159143dd6b5f255f48685711f48/reports/img/block-prop-vs-size.png)
 
-For additional plots and analysis, refer to the notebook [2.3-beacon-block-arrivals-with-relay.ipynb](https://github.com/misilva73/eth-slot-analysis/tree/c2366396cccee93bb507b137912baa82fe8ff228/notebooks/2.3-beacon-block-arrivals-with-relay.ipynb).
+For additional plots and analysis, refer to the notebook [2.3-beacon-block-arrivals-with-relay.ipynb](https://github.com/misilva73/eth-slot-analysis/tree/4b2765e537b8e159143dd6b5f255f48685711f48/notebooks/2.3-beacon-block-arrivals-with-relay.ipynb).
 
 ## Attestation times for missed slots
 
@@ -95,15 +95,15 @@ Until now, we were looking at the distribution of the data across all slots and 
 
 The same analysis can be done for the 95th percentile. The distribution is shown below. The mean now is 1572ms, while the 95th percentile is 1962ms.
 
-![atts-prop-p95]([image.png](https://raw.githubusercontent.com/misilva73/eth-slot-analysis/reports/img/atts-prop-p95.png))
+![atts-prop-p95](https://raw.githubusercontent.com/misilva73/eth-slot-analysis/4b2765e537b8e159143dd6b5f255f48685711f48/reports/img/atts-prop-p95.png)
 
-For additional plots and analysis, refer to the notebook [2.4-committee-attestations-missed-slots.ipyn](https://github.com/misilva73/eth-slot-analysis/tree/c2366396cccee93bb507b137912baa82fe8ff228/notebooks/2.4-committee-attestations-missed-slots.ipynb). The notebook [2.5-committee-attestations-missed-slots-v2.ipynb](https://github.com/misilva73/eth-slot-analysis/tree/c2366396cccee93bb507b137912baa82fe8ff228/notebooks/2.5-committee-attestations-missed-slots-v2.ipynb) contains the same analysis, but using a sample of missed slots 2 weeks after.
+For additional plots and analysis, refer to the notebook [2.4-committee-attestations-missed-slots.ipyn](https://github.com/misilva73/eth-slot-analysis/tree/4b2765e537b8e159143dd6b5f255f48685711f48/notebooks/2.4-committee-attestations-missed-slots.ipynb). The notebook [2.5-committee-attestations-missed-slots-v2.ipynb](https://github.com/misilva73/eth-slot-analysis/tree/4b2765e537b8e159143dd6b5f255f48685711f48/notebooks/2.5-committee-attestations-missed-slots-v2.ipynb) contains the same analysis, but using a sample of missed slots 2 weeks after.
 
 ## Attestation arrivals
 
 For this part of the analysis, we took a random sample of 4963 slots from the same slots with relay data used in the block propagation section. From this sample, 80.4% have a header from Ultrasound, 10.9% from Flashbots, and 8.7% from Titan. The next plot shows the distribution of the attestation arrivals (computed as milliseconds since the block was published by the relay) for all slots and all subnets.
 
-![atts-time-dist](https://raw.githubusercontent.com/misilva73/eth-slot-analysis/reports/img/atts-time-dist.png)
+![atts-time-dist](https://raw.githubusercontent.com/misilva73/eth-slot-analysis/4b2765e537b8e159143dd6b5f255f48685711f48/reports/img/atts-time-dist.png)
 
 Here, we can see a clear bimodal distribution, with modes around 1.2 seconds and 3 seconds. This means that there are two groups of attestations - fast and slow. The source of the bimodal distribution is neither the header source (as shown in the plot below, the distributions are pretty similar across the various relays) nor specific slots (as evidenced by the same trend at individual slot levels).
 
@@ -126,7 +126,7 @@ Besides the overall distribution, we computed the 95th percentile attestation wi
 
 The average P95 is 3590ms, while the 95th percentile of the P95 metric is 4217ms, which is still below the 4.5-second mark required for the 6-second slot proposal.
 
-For additional plots and analysis, refer to the notebook [2.6-committee-attestations-with-relay-v2.ipynb](https://github.com/misilva73/eth-slot-analysis/tree/c2366396cccee93bb507b137912baa82fe8ff228/notebooks/2.6-committee-attestations-with-relay-v2.ipynb).
+For additional plots and analysis, refer to the notebook [2.6-committee-attestations-with-relay-v2.ipynb](https://github.com/misilva73/eth-slot-analysis/tree/4b2765e537b8e159143dd6b5f255f48685711f48/notebooks/2.6-committee-attestations-with-relay-v2.ipynb).
 
 ## Factors impacting late attestations
 
