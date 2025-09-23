@@ -2,6 +2,8 @@
 
 ### Maria Silva, August 2025
 
+I would like to thank the teams at [Flashbots](https://www.flashbots.net/), [Titan](https://www.titanbuilder.xyz/), and [Ultrasound](https://relay.ultrasound.money/) for kindly sharing their data. I would also like thank the [ethPandaOps team](https://ethpandaops.io/) for collecting the attestation and block arrival data and for providing access to Xatu's ClickHouse instance. Finally, a big thanks to Thomas Thiery, Anders Elowsson, Barnabé Monnot and Marios Ioannou for their feedback and suggestions.
+
 ## Introduction
 
 This report contains the main results from analyzing block and attestation arrivals collected from Ethereum nodes between slots 12243599 and 12293998, which corresponds to roughly one week of slots during the first week of August 2025.
